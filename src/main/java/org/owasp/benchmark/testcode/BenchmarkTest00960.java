@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,33 +26,37 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest00960")
+@WebServlet(value="/weakrand-02/BenchmarkTest00960")
 public class BenchmarkTest00960 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
 	
 	@Override
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		doPost(request, response);
+		javax.servlet.http.Cookie userCookie = new javax.servlet.http.Cookie("BenchmarkTest00960", "anything");
+		userCookie.setMaxAge(60*3); //Store cookie for 3 minutes
+		response.addCookie(userCookie);
+		javax.servlet.RequestDispatcher rd = request.getRequestDispatcher("/weakrand-02/BenchmarkTest00960.html");
+		rd.include(request, response);
 	}
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 	
 		javax.servlet.http.Cookie[] theCookies = request.getCookies();
 		
-		String param = "";
+		String param = "noCookieValueSupplied";
 		if (theCookies != null) {
 			for (javax.servlet.http.Cookie theCookie : theCookies) {
-				if (theCookie.getName().equals("vector")) {
+				if (theCookie.getName().equals("BenchmarkTest00960")) {
 					param = java.net.URLDecoder.decode(theCookie.getValue(), "UTF-8");
 					break;
 				}
 			}
 		}
 
-		String bar = new Test().doSomething(param);
+		String bar = new Test().doSomething(request, param);
 		
 		double value = java.lang.Math.random();
         String rememberMeKey = Double.toString(value).substring(2);  // Trim off the 0. at the front.
@@ -78,30 +82,41 @@ public class BenchmarkTest00960 extends HttpServlet {
 		}
 		
 		if (foundUser) {
-			response.getWriter().println("Welcome back: " + user + "<br/>");			
+			response.getWriter().println(
+				"Welcome back: " + user + "<br/>"
+			);
+			
 		} else {			
 			javax.servlet.http.Cookie rememberMe = new javax.servlet.http.Cookie(cookieName, rememberMeKey);
 			rememberMe.setSecure(true);
-			rememberMe.setPath("/benchmark/" + this.getClass().getSimpleName());
+//			rememberMe.setPath("/benchmark/" + this.getClass().getSimpleName());
+			rememberMe.setPath(request.getRequestURI()); // i.e., set path to JUST this servlet
+														 // e.g., /benchmark/sql-01/BenchmarkTest01001
 			request.getSession().setAttribute(cookieName, rememberMeKey);
 			response.addCookie(rememberMe);
-			response.getWriter().println(user + " has been remembered with cookie: " + rememberMe.getName() 
-					+ " whose value is: " + rememberMe.getValue() + "<br/>");
+			response.getWriter().println(
+			user + " has been remembered with cookie: " + rememberMe.getName() 
+					+ " whose value is: " + rememberMe.getValue() + "<br/>"
+			);
 		}
-		response.getWriter().println("Weak Randomness Test java.lang.Math.random() executed");
+		response.getWriter().println(
+		"Weak Randomness Test java.lang.Math.random() executed"
+		);
+
 	}  // end doPost
 
+	
     private class Test {
 
-        public String doSomething(String param) throws ServletException, IOException {
+        public String doSomething(HttpServletRequest request, String param) throws ServletException, IOException {
 
 		String bar = "safe!";
-		java.util.HashMap<String,Object> map49121 = new java.util.HashMap<String,Object>();
-		map49121.put("keyA-49121", "a_Value"); // put some stuff in the collection
-		map49121.put("keyB-49121", param); // put it in a collection
-		map49121.put("keyC", "another_Value"); // put some stuff in the collection
-		bar = (String)map49121.get("keyB-49121"); // get it back out
-		bar = (String)map49121.get("keyA-49121"); // get safe value back out
+		java.util.HashMap<String,Object> map19964 = new java.util.HashMap<String,Object>();
+		map19964.put("keyA-19964", "a_Value"); // put some stuff in the collection
+		map19964.put("keyB-19964", param); // put it in a collection
+		map19964.put("keyC", "another_Value"); // put some stuff in the collection
+		bar = (String)map19964.get("keyB-19964"); // get it back out
+		bar = (String)map19964.get("keyA-19964"); // get safe value back out
 
             return bar;
         }

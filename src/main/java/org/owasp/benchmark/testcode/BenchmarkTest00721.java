@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest00721")
+@WebServlet(value="/xss-01/BenchmarkTest00721")
 public class BenchmarkTest00721 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
@@ -38,9 +38,9 @@ public class BenchmarkTest00721 extends HttpServlet {
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 	
-		String[] values = request.getParameterValues("vector");
+		String[] values = request.getParameterValues("BenchmarkTest00721");
 		String param;
 		if (values != null && values.length > 0)
 		  param = values[0];
@@ -60,7 +60,9 @@ public class BenchmarkTest00721 extends HttpServlet {
 		}
 		
 		
+response.setHeader("X-XSS-Protection", "0");
 		Object[] obj = { bar, "b"};
 		response.getWriter().printf("Formatted like: %1$s and %2$s.",obj);
 	}
+	
 }

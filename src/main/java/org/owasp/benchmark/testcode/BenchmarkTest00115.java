@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,26 +26,30 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest00115")
+@WebServlet(value="/sqli-00/BenchmarkTest00115")
 public class BenchmarkTest00115 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
 	
 	@Override
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		doPost(request, response);
+		javax.servlet.http.Cookie userCookie = new javax.servlet.http.Cookie("BenchmarkTest00115", "bar");
+		userCookie.setMaxAge(60*3); //Store cookie for 3 minutes
+		response.addCookie(userCookie);
+		javax.servlet.RequestDispatcher rd = request.getRequestDispatcher("/sqli-00/BenchmarkTest00115.html");
+		rd.include(request, response);
 	}
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 	
 		javax.servlet.http.Cookie[] theCookies = request.getCookies();
 		
-		String param = "";
+		String param = "noCookieValueSupplied";
 		if (theCookies != null) {
 			for (javax.servlet.http.Cookie theCookie : theCookies) {
-				if (theCookie.getName().equals("vector")) {
+				if (theCookie.getName().equals("BenchmarkTest00115")) {
 					param = java.net.URLDecoder.decode(theCookie.getValue(), "UTF-8");
 					break;
 				}
@@ -54,11 +58,11 @@ public class BenchmarkTest00115 extends HttpServlet {
 		
 		
 		String bar = "safe!";
-		java.util.HashMap<String,Object> map44581 = new java.util.HashMap<String,Object>();
-		map44581.put("keyA-44581", "a Value"); // put some stuff in the collection
-		map44581.put("keyB-44581", param); // put it in a collection
-		map44581.put("keyC", "another Value"); // put some stuff in the collection
-		bar = (String)map44581.get("keyB-44581"); // get it back out
+		java.util.HashMap<String,Object> map11928 = new java.util.HashMap<String,Object>();
+		map11928.put("keyA-11928", "a-Value"); // put some stuff in the collection
+		map11928.put("keyB-11928", param); // put it in a collection
+		map11928.put("keyC", "another-Value"); // put some stuff in the collection
+		bar = (String)map11928.get("keyB-11928"); // get it back out
 		
 		
 		String sql = "INSERT INTO users (username, password) VALUES ('foo','"+ bar + "')";
@@ -69,10 +73,13 @@ public class BenchmarkTest00115 extends HttpServlet {
             org.owasp.benchmark.helpers.DatabaseHelper.outputUpdateComplete(sql, response);
 		} catch (java.sql.SQLException e) {
 			if (org.owasp.benchmark.helpers.DatabaseHelper.hideSQLErrors) {
-        		response.getWriter().println("Error processing request.");
+        		response.getWriter().println(
+"Error processing request."
+);
         		return;
         	}
 			else throw new ServletException(e);
 		}
 	}
+	
 }

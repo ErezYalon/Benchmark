@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,26 +26,30 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest00062")
+@WebServlet(value="/pathtraver-00/BenchmarkTest00062")
 public class BenchmarkTest00062 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
 	
 	@Override
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		doPost(request, response);
+		javax.servlet.http.Cookie userCookie = new javax.servlet.http.Cookie("BenchmarkTest00062", "FileName");
+		userCookie.setMaxAge(60*3); //Store cookie for 3 minutes
+		response.addCookie(userCookie);
+		javax.servlet.RequestDispatcher rd = request.getRequestDispatcher("/pathtraver-00/BenchmarkTest00062.html");
+		rd.include(request, response);
 	}
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 	
 		javax.servlet.http.Cookie[] theCookies = request.getCookies();
 		
-		String param = "";
+		String param = "noCookieValueSupplied";
 		if (theCookies != null) {
 			for (javax.servlet.http.Cookie theCookie : theCookies) {
-				if (theCookie.getName().equals("vector")) {
+				if (theCookie.getName().equals("BenchmarkTest00062")) {
 					param = java.net.URLDecoder.decode(theCookie.getValue(), "UTF-8");
 					break;
 				}
@@ -54,29 +58,33 @@ public class BenchmarkTest00062 extends HttpServlet {
 		
 		
 		String bar = "safe!";
-		java.util.HashMap<String,Object> map68657 = new java.util.HashMap<String,Object>();
-		map68657.put("keyA-68657", "a Value"); // put some stuff in the collection
-		map68657.put("keyB-68657", param); // put it in a collection
-		map68657.put("keyC", "another Value"); // put some stuff in the collection
-		bar = (String)map68657.get("keyB-68657"); // get it back out
+		java.util.HashMap<String,Object> map77232 = new java.util.HashMap<String,Object>();
+		map77232.put("keyA-77232", "a-Value"); // put some stuff in the collection
+		map77232.put("keyB-77232", param); // put it in a collection
+		map77232.put("keyC", "another-Value"); // put some stuff in the collection
+		bar = (String)map77232.get("keyB-77232"); // get it back out
 		
 		
-		String fileName = null;
+        String fileName = null;
         java.io.FileInputStream fis = null;
 
         try {
-			fileName = org.owasp.benchmark.helpers.Utils.testfileDir + bar;
-			fis = new java.io.FileInputStream(new java.io.File(fileName));
-			byte[] b = new byte[1000];
-			int size = fis.read(b);
-			response.getWriter().write("The beginning of file: '" + org.owasp.esapi.ESAPI.encoder().encodeForHTML(fileName) + "' is:\n\n");
-			response.getWriter().write(org.owasp.esapi.ESAPI.encoder().encodeForHTML(new String(b,0,size)));
-		} catch (Exception e) {
+          fileName = org.owasp.benchmark.helpers.Utils.testfileDir + bar;
+          fis = new java.io.FileInputStream(new java.io.File(fileName));
+          byte[] b = new byte[1000];
+          int size = fis.read(b);
+          response.getWriter().println(
+            "The beginning of file: '" + org.owasp.esapi.ESAPI.encoder().encodeForHTML(fileName)
+              + "' is:\n\n" + org.owasp.esapi.ESAPI.encoder().encodeForHTML(new String(b,0,size))
+          );
+        } catch (Exception e) {
             System.out.println("Couldn't open FileInputStream on file: '" + fileName + "'");
-			response.getWriter().write("Problem getting FileInputStream: " 
-				+ org.owasp.esapi.ESAPI.encoder().encodeForHTML(e.getMessage()));
+            response.getWriter().println(
+              "Problem getting FileInputStream: "
+                 + org.owasp.esapi.ESAPI.encoder().encodeForHTML(e.getMessage())
+            );
         } finally {
-			if (fis != null) {
+            if (fis != null) {
                 try {
                     fis.close();
                     fis = null;
@@ -86,4 +94,5 @@ public class BenchmarkTest00062 extends HttpServlet {
             }
         }
 	}
+	
 }

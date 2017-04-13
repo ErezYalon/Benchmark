@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,33 +26,37 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest01888")
+@WebServlet(value="/sqli-04/BenchmarkTest01888")
 public class BenchmarkTest01888 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
 	
 	@Override
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		doPost(request, response);
+		javax.servlet.http.Cookie userCookie = new javax.servlet.http.Cookie("BenchmarkTest01888", "bar");
+		userCookie.setMaxAge(60*3); //Store cookie for 3 minutes
+		response.addCookie(userCookie);
+		javax.servlet.RequestDispatcher rd = request.getRequestDispatcher("/sqli-04/BenchmarkTest01888.html");
+		rd.include(request, response);
 	}
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 
 		javax.servlet.http.Cookie[] theCookies = request.getCookies();
 		
-		String param = "";
+		String param = "noCookieValueSupplied";
 		if (theCookies != null) {
 			for (javax.servlet.http.Cookie theCookie : theCookies) {
-				if (theCookie.getName().equals("vector")) {
+				if (theCookie.getName().equals("BenchmarkTest01888")) {
 					param = java.net.URLDecoder.decode(theCookie.getValue(), "UTF-8");
 					break;
 				}
 			}
 		}
 
-		String bar = doSomething(param);
+		String bar = doSomething(request, param);
 		
 		String sql = "INSERT INTO users (username, password) VALUES ('foo','"+ bar + "')";
 				
@@ -62,14 +66,17 @@ public class BenchmarkTest01888 extends HttpServlet {
             org.owasp.benchmark.helpers.DatabaseHelper.outputUpdateComplete(sql, response);
 		} catch (java.sql.SQLException e) {
 			if (org.owasp.benchmark.helpers.DatabaseHelper.hideSQLErrors) {
-        		response.getWriter().println("Error processing request.");
+        		response.getWriter().println(
+"Error processing request."
+);
         		return;
         	}
 			else throw new ServletException(e);
 		}
 	}  // end doPost
 	
-	private static String doSomething(String param) throws ServletException, IOException {
+		
+	private static String doSomething(HttpServletRequest request, String param) throws ServletException, IOException {
 
 		String bar;
 		

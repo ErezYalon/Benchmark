@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest02230")
+@WebServlet(value="/xss-04/BenchmarkTest02230")
 public class BenchmarkTest02230 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
@@ -38,28 +38,30 @@ public class BenchmarkTest02230 extends HttpServlet {
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 
 		java.util.Map<String,String[]> map = request.getParameterMap();
 		String param = "";
 		if (!map.isEmpty()) {
-			String[] values = map.get("vector");
+			String[] values = map.get("BenchmarkTest02230");
 			if (values != null) param = values[0];
 		}
 		
 
-		String bar = doSomething(param);
+		String bar = doSomething(request, param);
 		
+response.setHeader("X-XSS-Protection", "0");
 		Object[] obj = { "a", bar};
 		response.getWriter().printf(java.util.Locale.US,"Formatted like: %1$s and %2$s.",obj);
 	}  // end doPost
 	
-	private static String doSomething(String param) throws ServletException, IOException {
+		
+	private static String doSomething(HttpServletRequest request, String param) throws ServletException, IOException {
 
 		String bar = param;
 		if (param != null && param.length() > 1) {
-		    StringBuilder sbxyz9795 = new StringBuilder(param);
-		    bar = sbxyz9795.replace(param.length()-"Z".length(), param.length(),"Z").toString();
+		    StringBuilder sbxyz51189 = new StringBuilder(param);
+		    bar = sbxyz51189.replace(param.length()-"Z".length(), param.length(),"Z").toString();
 		}
 	
 		return bar;	

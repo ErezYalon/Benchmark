@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest00173")
+@WebServlet(value="/cmdi-00/BenchmarkTest00173")
 public class BenchmarkTest00173 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
@@ -38,18 +38,23 @@ public class BenchmarkTest00173 extends HttpServlet {
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 	
-		String param = request.getHeader("vector");
-		if (param == null) param = "";
+		String param = "";
+		if (request.getHeader("BenchmarkTest00173") != null) {
+			param = request.getHeader("BenchmarkTest00173");
+		}
+		
+		// URL Decode the header value since req.getHeader() doesn't. Unlike req.getParameter().
+		param = java.net.URLDecoder.decode(param, "UTF-8");
 		
 		
 		String bar = "safe!";
-		java.util.HashMap<String,Object> map92383 = new java.util.HashMap<String,Object>();
-		map92383.put("keyA-92383", "a Value"); // put some stuff in the collection
-		map92383.put("keyB-92383", param); // put it in a collection
-		map92383.put("keyC", "another Value"); // put some stuff in the collection
-		bar = (String)map92383.get("keyB-92383"); // get it back out
+		java.util.HashMap<String,Object> map68097 = new java.util.HashMap<String,Object>();
+		map68097.put("keyA-68097", "a-Value"); // put some stuff in the collection
+		map68097.put("keyB-68097", param); // put it in a collection
+		map68097.put("keyC", "another-Value"); // put some stuff in the collection
+		bar = (String)map68097.get("keyB-68097"); // get it back out
 		
 		
 		String cmd = org.owasp.benchmark.helpers.Utils.getInsecureOSCommandString(this.getClass().getClassLoader());
@@ -62,7 +67,11 @@ public class BenchmarkTest00173 extends HttpServlet {
 			org.owasp.benchmark.helpers.Utils.printOSCommandResults(p, response);
 		} catch (IOException e) {
 			System.out.println("Problem executing cmdi - TestCase");
-            throw new ServletException(e);
+			response.getWriter().println(
+			  org.owasp.esapi.ESAPI.encoder().encodeForHTML(e.getMessage())
+			);
+			return;
 		}
 	}
+	
 }

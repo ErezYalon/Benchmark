@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest01302")
+@WebServlet(value="/sqli-02/BenchmarkTest01302")
 public class BenchmarkTest01302 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
@@ -38,12 +38,12 @@ public class BenchmarkTest01302 extends HttpServlet {
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 	
-		String param = request.getParameter("vector");
+		String param = request.getParameter("BenchmarkTest01302");
 		if (param == null) param = "";
 
-		String bar = new Test().doSomething(param);
+		String bar = new Test().doSomething(request, param);
 		
 		String sql = "{call " + bar + "}";
 				
@@ -55,16 +55,19 @@ public class BenchmarkTest01302 extends HttpServlet {
             org.owasp.benchmark.helpers.DatabaseHelper.printResults(rs, sql, response);
         } catch (java.sql.SQLException e) {
         	if (org.owasp.benchmark.helpers.DatabaseHelper.hideSQLErrors) {
-        		response.getWriter().println("Error processing request.");
+        		response.getWriter().println(
+"Error processing request."
+);
         		return;
         	}
 			else throw new ServletException(e);
 		}
 	}  // end doPost
 
+	
     private class Test {
 
-        public String doSomething(String param) throws ServletException, IOException {
+        public String doSomething(HttpServletRequest request, String param) throws ServletException, IOException {
 
 		String bar = "";
 		if (param != null) {

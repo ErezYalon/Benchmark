@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest01728")
+@WebServlet(value="/sqli-03/BenchmarkTest01728")
 public class BenchmarkTest01728 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
@@ -38,18 +38,18 @@ public class BenchmarkTest01728 extends HttpServlet {
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 	
 		String queryString = request.getQueryString();
-		String paramval = "vector"+"=";
+		String paramval = "BenchmarkTest01728"+"=";
 		int paramLoc = -1;
 		if (queryString != null) paramLoc = queryString.indexOf(paramval);
 		if (paramLoc == -1) {
-			response.getWriter().println("getQueryString() couldn't find expected parameter '" + "vector" + "' in query string.");
+			response.getWriter().println("getQueryString() couldn't find expected parameter '" + "BenchmarkTest01728" + "' in query string.");
 			return;
 		}
 		
-		String param = queryString.substring(paramLoc + paramval.length()); // 1st assume "vector" param is last parameter in query string.
+		String param = queryString.substring(paramLoc + paramval.length()); // 1st assume "BenchmarkTest01728" param is last parameter in query string.
 		// And then check to see if its in the middle of the query string and if so, trim off what comes after.
 		int ampersandLoc = queryString.indexOf("&", paramLoc);
 		if (ampersandLoc != -1) {
@@ -57,7 +57,7 @@ public class BenchmarkTest01728 extends HttpServlet {
 		}
 		param = java.net.URLDecoder.decode(param, "UTF-8");
 
-		String bar = new Test().doSomething(param);
+		String bar = new Test().doSomething(request, param);
 		
 		String sql = "SELECT * from USERS where USERNAME='foo' and PASSWORD='"+ bar +"'";
 				
@@ -68,16 +68,19 @@ public class BenchmarkTest01728 extends HttpServlet {
             org.owasp.benchmark.helpers.DatabaseHelper.printResults(sql, counts, response);
 		} catch (java.sql.SQLException e) {
 			if (org.owasp.benchmark.helpers.DatabaseHelper.hideSQLErrors) {
-        		response.getWriter().println("Error processing request.");
+        		response.getWriter().println(
+"Error processing request."
+);
         		return;
         	}
 			else throw new ServletException(e);
 		}
 	}  // end doPost
 
+	
     private class Test {
 
-        public String doSomething(String param) throws ServletException, IOException {
+        public String doSomething(HttpServletRequest request, String param) throws ServletException, IOException {
 
 		String bar;
 		

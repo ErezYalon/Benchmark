@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest01723")
+@WebServlet(value="/sqli-03/BenchmarkTest01723")
 public class BenchmarkTest01723 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
@@ -38,18 +38,18 @@ public class BenchmarkTest01723 extends HttpServlet {
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 	
 		String queryString = request.getQueryString();
-		String paramval = "vector"+"=";
+		String paramval = "BenchmarkTest01723"+"=";
 		int paramLoc = -1;
 		if (queryString != null) paramLoc = queryString.indexOf(paramval);
 		if (paramLoc == -1) {
-			response.getWriter().println("getQueryString() couldn't find expected parameter '" + "vector" + "' in query string.");
+			response.getWriter().println("getQueryString() couldn't find expected parameter '" + "BenchmarkTest01723" + "' in query string.");
 			return;
 		}
 		
-		String param = queryString.substring(paramLoc + paramval.length()); // 1st assume "vector" param is last parameter in query string.
+		String param = queryString.substring(paramLoc + paramval.length()); // 1st assume "BenchmarkTest01723" param is last parameter in query string.
 		// And then check to see if its in the middle of the query string and if so, trim off what comes after.
 		int ampersandLoc = queryString.indexOf("&", paramLoc);
 		if (ampersandLoc != -1) {
@@ -57,29 +57,39 @@ public class BenchmarkTest01723 extends HttpServlet {
 		}
 		param = java.net.URLDecoder.decode(param, "UTF-8");
 
-		String bar = new Test().doSomething(param);
+		String bar = new Test().doSomething(request, param);
 		
-		try {
-			String sql = "SELECT  TOP 1 userid from USERS where USERNAME='foo' and PASSWORD='"+ bar + "'" ;
-			
+		String sql = "SELECT  TOP 1 userid from USERS where USERNAME='foo' and PASSWORD='"+ bar + "'" ;
+		try {	
 			int results = org.owasp.benchmark.helpers.DatabaseHelper.JDBCtemplate.queryForInt(sql);
-			java.io.PrintWriter out = response.getWriter();
-			out.write("Your results are: ");
+			String result = Integer.toString(results);
+			response.getWriter().println(
+				"Your results are: "
+			);
+
 	//		System.out.println("Your results are: ");
-			out.write(results);
+			response.getWriter().println(
+				result
+			);
 	//		System.out.println(results);
+		} catch (org.springframework.dao.EmptyResultDataAccessException e) {
+			response.getWriter().println(
+				"No results returned for query: " + org.owasp.esapi.ESAPI.encoder().encodeForHTML(sql)
+			);
 		} catch (org.springframework.dao.DataAccessException e) {
 			if (org.owasp.benchmark.helpers.DatabaseHelper.hideSQLErrors) {
-        		response.getWriter().println("Error processing request.");
-        		return;
+        		response.getWriter().println(
+					"Error processing request."
+				);
         	}
 			else throw new ServletException(e);
 		}
 	}  // end doPost
 
+	
     private class Test {
 
-        public String doSomething(String param) throws ServletException, IOException {
+        public String doSomething(HttpServletRequest request, String param) throws ServletException, IOException {
 
 		String bar;
 		

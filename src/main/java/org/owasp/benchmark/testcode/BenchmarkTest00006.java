@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark v1.2beta
+* OWASP Benchmark v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest00006")
+@WebServlet(value="/cmdi-00/BenchmarkTest00006")
 public class BenchmarkTest00006 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
@@ -39,11 +39,16 @@ public class BenchmarkTest00006 extends HttpServlet {
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// some code
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 		
 
-		String param = request.getHeader("vector");
-		if (param == null) param = "";
+		String param = "";
+		if (request.getHeader("BenchmarkTest00006") != null) {
+			param = request.getHeader("BenchmarkTest00006");
+		}
+		
+		// URL Decode the header value since req.getHeader() doesn't. Unlike req.getParameter().
+		param = java.net.URLDecoder.decode(param, "UTF-8");
 
 		
 		java.util.List<String> argList = new java.util.ArrayList<String>();
@@ -70,4 +75,5 @@ public class BenchmarkTest00006 extends HttpServlet {
             throw new ServletException(e);
 		}
 	}
+	
 }

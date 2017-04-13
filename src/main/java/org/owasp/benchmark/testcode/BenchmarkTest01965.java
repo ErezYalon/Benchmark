@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest01965")
+@WebServlet(value="/sqli-04/BenchmarkTest01965")
 public class BenchmarkTest01965 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
@@ -38,32 +38,46 @@ public class BenchmarkTest01965 extends HttpServlet {
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 
-		String param = request.getHeader("vector");
-		if (param == null) param = "";
-
-		String bar = doSomething(param);
+		String param = "";
+		if (request.getHeader("BenchmarkTest01965") != null) {
+			param = request.getHeader("BenchmarkTest01965");
+		}
 		
+		// URL Decode the header value since req.getHeader() doesn't. Unlike req.getParameter().
+		param = java.net.URLDecoder.decode(param, "UTF-8");
+
+		String bar = doSomething(request, param);
+		
+		String sql = "SELECT TOP 1 userid from USERS where USERNAME='foo' and PASSWORD='" + bar + "'";
 		try {
-			String sql = "SELECT TOP 1 userid from USERS where USERNAME='foo' and PASSWORD='"+ bar + "'";
-	
 			Long results = org.owasp.benchmark.helpers.DatabaseHelper.JDBCtemplate.queryForLong(sql);
-			java.io.PrintWriter out = response.getWriter();
-			out.write("Your results are: ");
+			response.getWriter().println(
+				"Your results are: "
+			);
+
 	//		System.out.println("your results are");
-			out.write(results.toString());
+			response.getWriter().println(
+				results.toString()
+			);
 	//		System.out.println(results);
+		} catch (org.springframework.dao.EmptyResultDataAccessException e) {
+			response.getWriter().println(
+				"No results returned for query: " + org.owasp.esapi.ESAPI.encoder().encodeForHTML(sql) 
+			);
 		} catch (org.springframework.dao.DataAccessException e) {
 			if (org.owasp.benchmark.helpers.DatabaseHelper.hideSQLErrors) {
-        		response.getWriter().println("Error processing request.");
-        		return;
+        		response.getWriter().println(
+					"Error processing request."
+				);
         	}
 			else throw new ServletException(e);
 		}
 	}  // end doPost
 	
-	private static String doSomething(String param) throws ServletException, IOException {
+		
+	private static String doSomething(HttpServletRequest request, String param) throws ServletException, IOException {
 
 		String bar;
 		

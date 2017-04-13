@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest02619")
+@WebServlet(value="/weakrand-05/BenchmarkTest02619")
 public class BenchmarkTest02619 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
@@ -38,18 +38,18 @@ public class BenchmarkTest02619 extends HttpServlet {
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 
 		String queryString = request.getQueryString();
-		String paramval = "vector"+"=";
+		String paramval = "BenchmarkTest02619"+"=";
 		int paramLoc = -1;
 		if (queryString != null) paramLoc = queryString.indexOf(paramval);
 		if (paramLoc == -1) {
-			response.getWriter().println("getQueryString() couldn't find expected parameter '" + "vector" + "' in query string.");
+			response.getWriter().println("getQueryString() couldn't find expected parameter '" + "BenchmarkTest02619" + "' in query string.");
 			return;
 		}
 		
-		String param = queryString.substring(paramLoc + paramval.length()); // 1st assume "vector" param is last parameter in query string.
+		String param = queryString.substring(paramLoc + paramval.length()); // 1st assume "BenchmarkTest02619" param is last parameter in query string.
 		// And then check to see if its in the middle of the query string and if so, trim off what comes after.
 		int ampersandLoc = queryString.indexOf("&", paramLoc);
 		if (ampersandLoc != -1) {
@@ -57,7 +57,7 @@ public class BenchmarkTest02619 extends HttpServlet {
 		}
 		param = java.net.URLDecoder.decode(param, "UTF-8");
 
-		String bar = doSomething(param);
+		String bar = doSomething(request, param);
 		
 		try {
 			float rand = java.security.SecureRandom.getInstance("SHA1PRNG").nextFloat();
@@ -83,27 +83,34 @@ public class BenchmarkTest02619 extends HttpServlet {
 				}
 			}
 
-			
 			if (foundUser) {
-				response.getWriter().println("Welcome back: " + user + "<br/>");			
+				response.getWriter().println(
+"Welcome back: " + user + "<br/>"
+);
 			} else {			
 				javax.servlet.http.Cookie rememberMe = new javax.servlet.http.Cookie(cookieName, rememberMeKey);
 				rememberMe.setSecure(true);
-				rememberMe.setPath("/benchmark/" + this.getClass().getSimpleName());
+	//			rememberMe.setPath("/benchmark/" + this.getClass().getSimpleName());
+				rememberMe.setPath(request.getRequestURI()); // i.e., set path to JUST this servlet 
+															 // e.g., /benchmark/sql-01/BenchmarkTest01001
 				request.getSession().setAttribute(cookieName, rememberMeKey);
-				response.addCookie(rememberMe);
-				response.getWriter().println(user + " has been remembered with cookie: " + rememberMe.getName() 
-						+ " whose value is: " + rememberMe.getValue() + "<br/>");
+response.addCookie(rememberMe);
+response.getWriter().println(
+user + " has been remembered with cookie: " + rememberMe.getName() 
+						+ " whose value is: " + rememberMe.getValue() + "<br/>"
+);
 			}
-
 	    } catch (java.security.NoSuchAlgorithmException e) {
 			System.out.println("Problem executing SecureRandom.nextFloat() - TestCase");
 			throw new ServletException(e);
 	    }		
-		response.getWriter().println("Weak Randomness Test java.security.SecureRandom.nextFloat() executed");
+		response.getWriter().println(
+"Weak Randomness Test java.security.SecureRandom.nextFloat() executed"
+);
 	}  // end doPost
 	
-	private static String doSomething(String param) throws ServletException, IOException {
+		
+	private static String doSomething(HttpServletRequest request, String param) throws ServletException, IOException {
 
 		String bar;
 		String guess = "ABC";

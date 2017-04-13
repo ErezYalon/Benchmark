@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest00499")
+@WebServlet(value="/cmdi-00/BenchmarkTest00499")
 public class BenchmarkTest00499 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
@@ -38,12 +38,12 @@ public class BenchmarkTest00499 extends HttpServlet {
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 	
 		java.util.Map<String,String[]> map = request.getParameterMap();
 		String param = "";
 		if (!map.isEmpty()) {
-			String[] values = map.get("vector");
+			String[] values = map.get("BenchmarkTest00499");
 			if (values != null) param = values[0];
 		}
 		
@@ -66,7 +66,11 @@ public class BenchmarkTest00499 extends HttpServlet {
 			org.owasp.benchmark.helpers.Utils.printOSCommandResults(p, response);
 		} catch (IOException e) {
 			System.out.println("Problem executing cmdi - TestCase");
-            throw new ServletException(e);
+			response.getWriter().println(
+			  org.owasp.esapi.ESAPI.encoder().encodeForHTML(e.getMessage())
+			);
+			return;
 		}
 	}
+	
 }

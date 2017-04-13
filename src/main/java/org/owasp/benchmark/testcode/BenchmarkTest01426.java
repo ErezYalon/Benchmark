@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest01426")
+@WebServlet(value="/xss-02/BenchmarkTest01426")
 public class BenchmarkTest01426 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
@@ -38,7 +38,7 @@ public class BenchmarkTest01426 extends HttpServlet {
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 	
 		String param = "";
 		boolean flag = true;
@@ -49,7 +49,7 @@ public class BenchmarkTest01426 extends HttpServlet {
 			if (values != null) {
 				for(int i=0;i<values.length && flag; i++){
 					String value = values[i];
-					if (value.equals("vector")) {
+					if (value.equals("BenchmarkTest01426")) {
 						param = name;
 					    flag = false;
 					}
@@ -57,14 +57,16 @@ public class BenchmarkTest01426 extends HttpServlet {
 			}
 		}
 
-		String bar = new Test().doSomething(param);
+		String bar = new Test().doSomething(request, param);
 		
+response.setHeader("X-XSS-Protection", "0");
 		response.getWriter().println(bar);
 	}  // end doPost
 
+	
     private class Test {
 
-        public String doSomething(String param) throws ServletException, IOException {
+        public String doSomething(HttpServletRequest request, String param) throws ServletException, IOException {
 
 		String bar;
 		String guess = "ABC";

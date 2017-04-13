@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,60 +26,66 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest01881")
+@WebServlet(value="/sqli-04/BenchmarkTest01881")
 public class BenchmarkTest01881 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
 	
 	@Override
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		doPost(request, response);
+		javax.servlet.http.Cookie userCookie = new javax.servlet.http.Cookie("BenchmarkTest01881", "bar");
+		userCookie.setMaxAge(60*3); //Store cookie for 3 minutes
+		response.addCookie(userCookie);
+		javax.servlet.RequestDispatcher rd = request.getRequestDispatcher("/sqli-04/BenchmarkTest01881.html");
+		rd.include(request, response);
 	}
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 
 		javax.servlet.http.Cookie[] theCookies = request.getCookies();
 		
-		String param = "";
+		String param = "noCookieValueSupplied";
 		if (theCookies != null) {
 			for (javax.servlet.http.Cookie theCookie : theCookies) {
-				if (theCookie.getName().equals("vector")) {
+				if (theCookie.getName().equals("BenchmarkTest01881")) {
 					param = java.net.URLDecoder.decode(theCookie.getValue(), "UTF-8");
 					break;
 				}
 			}
 		}
 
-		String bar = doSomething(param);
+		String bar = doSomething(request, param);
 		
 		try {
-	        String sql = "SELECT * from USERS where USERNAME='foo' and PASSWORD='"
-	            + bar + "'";
+	        String sql = "SELECT * from USERS where USERNAME='foo' and PASSWORD='" + bar + "'";
 	
 			org.owasp.benchmark.helpers.DatabaseHelper.JDBCtemplate.batchUpdate(sql);
-			java.io.PrintWriter out = response.getWriter();
+			response.getWriter().println(
+				"No results can be displayed for query: " + org.owasp.esapi.ESAPI.encoder().encodeForHTML(sql) + "<br>"
+				+ " because the Spring batchUpdate method doesn't return results."
+			);
 	//		System.out.println("no results for query: " + sql + " because the Spring batchUpdate method doesn't return results.");
-			out.write("No results can be displayed for query: " + org.owasp.esapi.ESAPI.encoder().encodeForHTML(sql) + "<br>");
-			out.write(" because the Spring batchUpdate method doesn't return results.");
 		} catch (org.springframework.dao.DataAccessException e) {
 			if (org.owasp.benchmark.helpers.DatabaseHelper.hideSQLErrors) {
-        		response.getWriter().println("Error processing request.");
-        		return;
+        		response.getWriter().println(
+					"Error processing request."
+				);
         	}
 			else throw new ServletException(e);
 		}
 	}  // end doPost
 	
-	private static String doSomething(String param) throws ServletException, IOException {
+		
+	private static String doSomething(HttpServletRequest request, String param) throws ServletException, IOException {
 
 		String bar = "safe!";
-		java.util.HashMap<String,Object> map56775 = new java.util.HashMap<String,Object>();
-		map56775.put("keyA-56775", "a Value"); // put some stuff in the collection
-		map56775.put("keyB-56775", param); // put it in a collection
-		map56775.put("keyC", "another Value"); // put some stuff in the collection
-		bar = (String)map56775.get("keyB-56775"); // get it back out
+		java.util.HashMap<String,Object> map20027 = new java.util.HashMap<String,Object>();
+		map20027.put("keyA-20027", "a-Value"); // put some stuff in the collection
+		map20027.put("keyB-20027", param); // put it in a collection
+		map20027.put("keyC", "another-Value"); // put some stuff in the collection
+		bar = (String)map20027.get("keyB-20027"); // get it back out
 	
 		return bar;	
 	}

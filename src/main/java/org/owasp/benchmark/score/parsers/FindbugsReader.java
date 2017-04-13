@@ -24,6 +24,7 @@ import java.io.FileInputStream;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.owasp.benchmark.score.BenchmarkScore;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -31,6 +32,8 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 public class FindbugsReader extends Reader {
+	
+	// This reader supports both FindBugs and FindSecBugs, since the later is simply a FindBugs plugin.
 	
 	public TestResults parse( File f ) throws Exception {
 		DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
@@ -72,8 +75,8 @@ public class FindbugsReader extends Reader {
 			Node cl = getNamedNode( "Class", n.getChildNodes() );
 			String classname = cl.getAttributes().getNamedItem("classname").getNodeValue();
 			classname = classname.substring( classname.lastIndexOf('.') + 1);
-			if ( classname.startsWith( "BenchmarkTest" ) ) {
-				String testNumber = classname.substring( "BenchmarkTest".length() );
+			if ( classname.startsWith( BenchmarkScore.BENCHMARKTESTNAME ) ) {
+				String testNumber = classname.substring( BenchmarkScore.BENCHMARKTESTNAME.length() );
 				tcr.setNumber( Integer.parseInt( testNumber ) );
 			}
 			
@@ -117,10 +120,11 @@ public class FindbugsReader extends Reader {
 
 		//This is a fallback mapping for unsupported/old versions of the Find Security Bugs plugin
 		//All important bug patterns have their CWE ID associated in later versions (1.4.3+).
-		switch( cat ) {
+		switch ( cat ) {
 			//Cookies
 			case "SECIC" : 		return 614;  // insecure cookie use
 			case "SECCU" :      return 00; // servlet cookie
+			case "SECHOC" :		return 00; // HTTP Only not set on cookie - Information Leak / Disclosure (CWE-200)??
 
 			//Injections
 			case "SECSQLIHIB"     : return 564;  // Hibernate Injection, child of SQL Injection
@@ -167,9 +171,13 @@ public class FindbugsReader extends Reader {
 			//Input sources
 			case "SECSP" : 		return 00;	 // servlet parameter - not a vuln
 			case "SECSH" : 		return 00;   // servlet header -- not a vuln
+			case "SECSHR" : 	return 00;   // Use of Request Header -- spoofable
 			case "SECSSQ" : 	return 00;   // servlet query - not a vuln
 
-			default : System.out.println( "Unknown category: " + cat );
+			//Technology detection
+			case "SECSC" : 		return 00;	 // found Spring endpoint - not a vuln
+
+			default : System.out.println( "Unknown vuln category for FindBugs: " + cat );
 		}
 
 		return 0;

@@ -44,7 +44,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import javax.resource.NotSupportedException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -60,17 +59,22 @@ import org.owasp.benchmark.score.parsers.Counter;
 import org.owasp.benchmark.score.parsers.CoverityReader;
 import org.owasp.benchmark.score.parsers.FindbugsReader;
 import org.owasp.benchmark.score.parsers.FortifyReader;
+import org.owasp.benchmark.score.parsers.FusionLiteInsightReader;
+import org.owasp.benchmark.score.parsers.JuliaReader;
+import org.owasp.benchmark.score.parsers.NetsparkerReader;
+import org.owasp.benchmark.score.parsers.NoisyCricketReader;
 import org.owasp.benchmark.score.parsers.OverallResult;
 import org.owasp.benchmark.score.parsers.OverallResults;
 import org.owasp.benchmark.score.parsers.PMDReader;
 import org.owasp.benchmark.score.parsers.ParasoftReader;
-import org.owasp.benchmark.score.parsers.NoisyCricketReader;
 import org.owasp.benchmark.score.parsers.Rapid7Reader;
 import org.owasp.benchmark.score.parsers.SonarQubeReader;
+import org.owasp.benchmark.score.parsers.SourceMeterReader;
 import org.owasp.benchmark.score.parsers.TestCaseResult;
 import org.owasp.benchmark.score.parsers.TestResults;
 import org.owasp.benchmark.score.parsers.VeracodeReader;
 import org.owasp.benchmark.score.parsers.WebInspectReader;
+import org.owasp.benchmark.score.parsers.XanitizerReader;
 import org.owasp.benchmark.score.parsers.ZapReader;
 import org.owasp.benchmark.score.report.Report;
 import org.owasp.benchmark.score.report.ScatterHome;
@@ -81,6 +85,9 @@ import org.xml.sax.InputSource;
 
 public class BenchmarkScore {
 
+	// The prefix for the generated test file names. Used by lots of other classes too.
+	public static final String BENCHMARKTESTNAME = "BenchmarkTest";
+	
 	private static final String GUIDEFILENAME = "OWASP_Benchmark_Guide.html";
 	private static final String HOMEFILENAME = "OWASP_Benchmark_Home.html";    
     public static final String pathToScorecardResources = "src/main/resources/scorecard/";
@@ -387,7 +394,8 @@ public class BenchmarkScore {
             //System.out.println("Computed actual results for tool: " + actualResults.getTool());
         
             if ( expectedResults != null && actualResults != null ) {
-                // note: side effect is that "pass/fail" value is set for each expected result
+                // note: side effect is that "pass/fail" value is set for each expected result so it
+            	// can be used to produce scorecard for this tool
                 analyze( expectedResults, actualResults );
             
                 // Produce a .csv results file of the actual results, except if its a commercial tool,
@@ -512,19 +520,20 @@ public class BenchmarkScore {
      */
 	public static String translateCategoryToName(String category) {
 		switch( category ) {
-		case "cmdi" : return "Command Injection";
-		case "xss" : return "Cross-Site Scripting";
-		case "ldapi" : return "LDAP Injection";
-		case "headeri" : return "Header Injection";
-		case "securecookie" : return "Insecure Cookie";
-		case "pathtraver" : return "Path Traversal";
-		case "crypto" : return "Weak Encryption Algorithm";
-		case "hash" : return "Weak Hash Algorithm";
-		case "weakrand" : return "Weak Random Number";
-		case "sqli" : return "SQL Injection";
-		case "trustbound" : return "Trust Boundary Violation";
-		case "xpathi" : return "XPath Injection";
-		default : return "Unknown Vulnerability: " + category;
+			case "cmdi" : return "Command Injection";
+			case "xss" : return "Cross-Site Scripting";
+			case "ldapi" : return "LDAP Injection";
+			case "headeri" : return "Header Injection";
+			case "securecookie" : return "Insecure Cookie";
+			case "pathtraver" : return "Path Traversal";
+			case "crypto" : return "Weak Encryption Algorithm";
+			case "hash" : return "Weak Hash Algorithm";
+			case "weakrand" : return "Weak Random Number";
+			case "sqli" : return "SQL Injection";
+			case "hqli" : return "Hibernate Injection";
+			case "trustbound" : return "Trust Boundary Violation";
+			case "xpathi" : return "XPath Injection";
+			default : return "Unknown Vulnerability: " + category;
 		}
 	}
 
@@ -535,18 +544,19 @@ public class BenchmarkScore {
      */
 	public static int translateCategoryToCWE(String category) {
 		switch( category ) {
-		case "cmdi" : return 78;
-		case "xss" : return 79;
-		case "ldapi" : return 90;
-		case "securecookie" : return 614;
-		case "pathtraver" : return 22;
-		case "crypto" : return 327;
-		case "hash" : return 328;
-		case "weakrand" : return 330;
-		case "sqli" : return 89;
-		case "trustbound" : return 501;
-		case "xpathi" : return 643;
-		default : return 0;
+			case "cmdi" : return 78;
+			case "xss" : return 79;
+			case "ldapi" : return 90;
+			case "securecookie" : return 614;
+			case "pathtraver" : return 22;
+			case "crypto" : return 327;
+			case "hash" : return 328;
+			case "weakrand" : return 330;
+			case "sqli" : return 89;
+			case "hqli" : return 564; // This is the real CWE for Hibernate Injection, but most tools probably report 89
+			case "trustbound" : return 501;
+			case "xpathi" : return 643;
+			default : return 0;
 		}
 	}
 	
@@ -566,6 +576,7 @@ public class BenchmarkScore {
 		case "Weak Hash Algorithm" : return 328;
 		case "Weak Random Number" : return 330;
 		case "SQL Injection" : return 89;
+		case "Hibernate Injection" : return 564; // This is the real CWE for Hibernate Injection, but most tools probably report 89
 		case "Trust Boundary Violation" : return 501;
 		case "XPath Injection" : return 643;
 		default : 
@@ -607,26 +618,45 @@ public class BenchmarkScore {
 		String filename = fileToParse.getName();
 		TestResults tr = null;
         
-        if ( filename.endsWith(".ozasmt" ) ) {
+        if ( filename.endsWith( ".ozasmt" ) ) {
             tr = new AppScanSourceReader().parse( fileToParse );
         }      
         
-        else if ( filename.endsWith(".json" ) ) {
+        else if ( filename.endsWith( ".json" ) ) {
             String line1 = getLine( fileToParse, 0 );
             String line2 = getLine( fileToParse, 1 );
-            if ( line2.contains("formatVersion")) {
+            if ( line2.contains("Coverity") || line2.contains("formatVersion") ) {
                 tr = new CoverityReader().parse( fileToParse );
             }
         }
         
-		else if ( filename.endsWith( ".xml" ) ) {
+        else if ( filename.endsWith( ".txt" ) ) {
+            String line1 = getLine( fileToParse, 0 );
+            if ( line1.startsWith( "Possible " ) ) {
+                tr = new SourceMeterReader().parse( fileToParse );
+            }
+        }
+
+        else if ( filename.endsWith( ".xml" ) ) {
+
+            // Handle XML results file where the 2nd line indicates the tool type
+
             String line1 = getLine( fileToParse, 0 );
             String line2 = getLine( fileToParse, 1 );
-		    if ( line2.startsWith( "<pmd")) {
+
+            if ( line2.startsWith( "<pmd" )) {
                 tr = new PMDReader().parse( fileToParse );
-		    }
+            }
 		    
-            else if ( line2.startsWith( "<BugCollection")) {
+            else if ( line2.startsWith( "<FusionLiteInsight" )) {
+                tr = new FusionLiteInsightReader().parse( fileToParse );
+            }
+ 
+            else if (line2.startsWith( "<XanitizerFindingsList" )) {
+                tr = new XanitizerReader().parse( fileToParse );
+            }
+
+            else if ( line2.startsWith( "<BugCollection" )) {
                 tr = new FindbugsReader().parse( fileToParse );
                 
                 // change the name of the tool if the filename contains findsecbugs
@@ -635,42 +665,46 @@ public class BenchmarkScore {
                 }
             }
 
-            else if ( line2.startsWith( "<ResultsSession")) {
+            else if ( line2.startsWith( "<ResultsSession" )) {
                 tr = new ParasoftReader().parse( fileToParse );
             }
 
-            else if ( line2.startsWith( "<detailedreport")) {
+            else if ( line2.startsWith( "<detailedreport" )) {
                 tr = new VeracodeReader().parse( fileToParse );
             }
 
-            else if ( line1.startsWith( "<total")) {
+            else if ( line1.startsWith( "<total" )) {
                 tr = new SonarQubeReader().parse( fileToParse );
             }
             
-            else if ( line1.contains( "<OWASPZAPReport") || line2.contains( "<OWASPZAPReport")) {
+            else if ( line1.contains( "<OWASPZAPReport" ) || line2.contains( "<OWASPZAPReport" )) {
                 tr = new ZapReader().parse( fileToParse );
             }
             
-            else if ( line2.startsWith( "<CxXMLResults")) {
+            else if ( line2.startsWith( "<CxXMLResults" )) {
                 tr = new CheckmarxReader().parse( fileToParse );
             }
             
-            else if ( line2.startsWith( "<report")) {
+            else if ( line2.startsWith( "<report" )) {
                 tr = new ArachniReader().parse( fileToParse );
             }
-		    
-            else {
+            else if ( line2.startsWith( "<analysisReportResult")) {
+                tr = new JuliaReader().parse( fileToParse );
+            }
+ 
+            else { // Handle XML where we have to look for a specific node to identify the tool type
+
                 Document doc = getXMLDocument( fileToParse );
                 Node root = doc.getDocumentElement();
                 if ( root.getNodeName().equals( "issues" ) ) {
                     tr = new BurpReader().parse( root );
                 }
                 
-                else if ( root.getNodeName().equals( "XmlReport") ) {
+                else if ( root.getNodeName().equals( "XmlReport" ) ) {
                     tr = new AppScanDynamicReader().parse( root );
                 }
 
-                else if ( root.getNodeName().equals( "noisycricket") ) {
+                else if ( root.getNodeName().equals( "noisycricket" ) ) {
                     tr = new NoisyCricketReader().parse( root );
                 }
 
@@ -685,19 +719,23 @@ public class BenchmarkScore {
                 else if ( root.getNodeName().equals( "VulnSummary" ) ) {
                     tr = new Rapid7Reader().parse( root );
                 }
-            }
-		}
+                else if ( root.getNodeName().equals( "netsparker" ) ) {
+                    tr = new NetsparkerReader().parse( root );
+                }
+
+            } // end else
+         } // end if endsWith ".xml"
 		
 		else if ( filename.endsWith( ".fpr" ) ) {
 			
-			// .fpr files are really .zip files. So we have to extract the .fvdl file out of it to process it
-			Path path = Paths.get(fileToParse.getPath());
+		// .fpr files are really .zip files. So we have to extract the .fvdl file out of it to process it
+		    Path path = Paths.get(fileToParse.getPath());
 		    FileSystem fileSystem = FileSystems.newFileSystem(path, null);
 		    File outputFile = File.createTempFile( filename, ".fvdl");
 		    Path source = fileSystem.getPath("audit.fvdl");
 		    Files.copy(source, outputFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-			tr = new FortifyReader().parse( outputFile );
-			outputFile.delete();
+		    tr = new FortifyReader().parse( outputFile );
+		    outputFile.delete();
 			
 			// Check to see if the results are regular Fortify or Fortify OnDemand results
 			// To check, you have to look at the filtertemplate.xml file inside the .fpr archive
@@ -734,7 +772,7 @@ public class BenchmarkScore {
 			}
 		}
         
-        else if ( filename.endsWith( ".zip") ) {
+        else if ( filename.endsWith( ".log" ) ) {
             tr = new ContrastReader().parse( fileToParse );
         }
         
@@ -823,7 +861,7 @@ public class BenchmarkScore {
 	 * that results was found, If False Positive, that result was not found.)
 	 */
 	private static boolean compare( TestCaseResult exp, List<TestCaseResult> actList, String tool ) {
-		// return true if there are no actual results and this was a fake test
+		// return true if there are no actual results and this was a false positive test
 		if ( actList == null || actList.isEmpty() ) {
 			return !exp.isReal();
 		}
@@ -833,21 +871,30 @@ public class BenchmarkScore {
 			// Helpful in debugging
 		    //System.out.println( "  Evidence: " + act.getCWE() + " " + act.getEvidence() + "[" + act.getConfidence() + "]");
 			
-		    boolean match = act.getCWE() == exp.getCWE();
+			int actualCWE = act.getCWE();
+			int expectedCWE = exp.getCWE();
+			
+		    boolean match = actualCWE == expectedCWE;
+		    
+		    // Special case: many tools report CWE 89 (sqli) for Hibernate Injection (hqli) rather than 
+		    // actual CWE of 564 So we accept either
+		    if (!match && (expectedCWE == 564)) {
+		    	match = (actualCWE == 89);
+		    }
 			
 			// special hack since IBM/Veracode don't distinguish different kinds of weak algorithm
 			if ( tool.startsWith("AppScan") || tool.startsWith("Vera")) {
-			    if ( exp.getCWE() == 328 && act.getCWE() == 327 ) {
+			    if ( expectedCWE == 328 && actualCWE == 327 ) {
 			        match = true;
 			    }
 			}
 					
-			// return true if we find an exact match for a real test
+			// return true if we find an exact match for a True Positive test
 			if ( match ) {
 				return exp.isReal();
 			}
 		}
-		// if we couldn't find a match, then return true if it's a fake test
+		// if we couldn't find a match, then return true if it's a False Positive test
 		return !exp.isReal();
 	}
 
@@ -890,16 +937,31 @@ private static final String BENCHMARK_VERSION_PREFIX = "Benchmark version: ";
 				line = fr.readLine();
 				reading = line != null;
 				if ( reading ) {
-					String[] parts = line.split(",");
-					if ( parts[0] != null && parts[0].startsWith("Bench" ) ) {
+				// Normally, each line contains: test name, category, real vulnerability, cwe #
+
+//					String[] parts = line.split(",");
+// regex from http://stackoverflow.com/questions/1757065/java-splitting-a-comma-separated-string-but-ignoring-commas-in-quotes
+					// This regex needed because some 'full details' entries contain comma's inside quoted strings
+					String[] parts = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
+					if ( parts[0] != null && parts[0].startsWith(BENCHMARKTESTNAME) ) {
 						TestCaseResult tcr = new TestCaseResult();
 						tcr.setTestCaseName(parts[0]);
 						tcr.setCategory( parts[1]);
 						tcr.setReal( Boolean.parseBoolean( parts[2] ) );
 						tcr.setCWE( Integer.parseInt( parts[3]) );
 	
-						String tcname = parts[0].substring( "BenchmarkTest".length() );
+						String tcname = parts[0].substring( BENCHMARKTESTNAME.length() );
 						tcr.setNumber( Integer.parseInt(tcname));
+						
+						// Handle situation where expected results has full details
+						// Sometimes, it also has: source, data flow, data flow filename, sink
+
+						if (parts.length > 4) {
+							tcr.setSource(parts[4]);
+							tcr.setDataFlow(parts[5]);
+							tcr.setDataFlowFile(parts[6]);
+							tcr.setSink(parts[7]);
+						}
 						
 						tr.put( tcr );
 					}
@@ -932,30 +994,37 @@ private static final String BENCHMARK_VERSION_PREFIX = "Benchmark version: ";
 			FileOutputStream fos = new FileOutputStream(resultsFile, false);
 			ps = new PrintStream(fos);
 	
-			// Write actual results header
-			ps.print("# test name, category, real vulnerability, CWE, identified by tool, pass/fail");
+			Set<Integer> testCaseKeys = actual.keySet();
 
-			// Add the version # inside the file as well
-			ps.print(", Benchmark version: " + benchmarkVersion);
+			boolean fulldetails = (actual.get(testCaseKeys.iterator().next()).get(0).getSource() != null);
+				
+			// Write actual results header
+			ps.print("# test name, category, CWE, ");
+			if (fulldetails) ps.print("source, data flow, data flow filename, sink, ");
+			ps.print("real vulnerability, identified by tool, pass/fail, Benchmark version: " + benchmarkVersion);
 			
 			// Append the date YYYY-MM-DD to the header in each .csv file
 			Calendar c = Calendar.getInstance();
 			String s = String.format("%1$tY-%1$tm-%1$te", c);
 			ps.println(", Actual results generated: " + s);
 	
-			Set<Integer> testCaseKeys = actual.keySet();
-			
 			for (Integer expectedResultsKey : testCaseKeys) {
 				// Write meta data to file here.
 				TestCaseResult actualResult = actual.get(expectedResultsKey.intValue()).get(0);
 				ps.print(actualResult.getName());
 				ps.print(", " + actualResult.getCategory());
+				ps.print(", " + actualResult.getCWE());
+				if (fulldetails) {
+					ps.print("," + actualResult.getSource());
+					ps.print("," + actualResult.getDataFlow());
+					ps.print(", " + actualResult.getDataFlowFile());
+					ps.print("," + actualResult.getSink());					
+				}
 				boolean isreal = actualResult.isReal();
 				ps.print(", " + isreal);
-				ps.print(", " + actualResult.getCWE());
 				boolean passed = actualResult.isPassed();
 				boolean toolresult = !(isreal^passed);
-				ps.print(", " + toolresult );
+				ps.print(", " + toolresult);
 				ps.println(", " + (passed ? "pass" : "fail"));
 			}
 			

@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,33 +26,37 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest01871")
+@WebServlet(value="/weakrand-04/BenchmarkTest01871")
 public class BenchmarkTest01871 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
 	
 	@Override
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		doPost(request, response);
+		javax.servlet.http.Cookie userCookie = new javax.servlet.http.Cookie("BenchmarkTest01871", "whatever");
+		userCookie.setMaxAge(60*3); //Store cookie for 3 minutes
+		response.addCookie(userCookie);
+		javax.servlet.RequestDispatcher rd = request.getRequestDispatcher("/weakrand-04/BenchmarkTest01871.html");
+		rd.include(request, response);
 	}
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 
 		javax.servlet.http.Cookie[] theCookies = request.getCookies();
 		
-		String param = "";
+		String param = "noCookieValueSupplied";
 		if (theCookies != null) {
 			for (javax.servlet.http.Cookie theCookie : theCookies) {
-				if (theCookie.getName().equals("vector")) {
+				if (theCookie.getName().equals("BenchmarkTest01871")) {
 					param = java.net.URLDecoder.decode(theCookie.getValue(), "UTF-8");
 					break;
 				}
 			}
 		}
 
-		String bar = doSomething(param);
+		String bar = doSomething(request, param);
 		
 		try {
 			int r = java.security.SecureRandom.getInstance("SHA1PRNG").nextInt();
@@ -78,32 +82,40 @@ public class BenchmarkTest01871 extends HttpServlet {
 				}
 			}
 
-			
 			if (foundUser) {
-				response.getWriter().println("Welcome back: " + user + "<br/>");			
+				response.getWriter().println(
+"Welcome back: " + user + "<br/>"
+);
 			} else {			
 				javax.servlet.http.Cookie rememberMe = new javax.servlet.http.Cookie(cookieName, rememberMeKey);
 				rememberMe.setSecure(true);
-				rememberMe.setPath("/benchmark/" + this.getClass().getSimpleName());
+	//			rememberMe.setPath("/benchmark/" + this.getClass().getSimpleName());
+				rememberMe.setPath(request.getRequestURI()); // i.e., set path to JUST this servlet 
+															 // e.g., /benchmark/sql-01/BenchmarkTest01001
 				request.getSession().setAttribute(cookieName, rememberMeKey);
 				response.addCookie(rememberMe);
-				response.getWriter().println(user + " has been remembered with cookie: " + rememberMe.getName() 
-						+ " whose value is: " + rememberMe.getValue() + "<br/>");
+response.getWriter().println(
+user + " has been remembered with cookie: " + rememberMe.getName() 
+						+ " whose value is: " + rememberMe.getValue() + "<br/>"
+);
 			}
-
 		} catch (java.security.NoSuchAlgorithmException e) {
 			System.out.println("Problem executing SecureRandom.nextInt() - TestCase");
 			throw new ServletException(e);
 	    }
-		response.getWriter().println("Weak Randomness Test java.security.SecureRandom.nextInt() executed");
+		response.getWriter().println(
+"Weak Randomness Test java.security.SecureRandom.nextInt() executed"
+);
+
 	}  // end doPost
 	
-	private static String doSomething(String param) throws ServletException, IOException {
+		
+	private static String doSomething(HttpServletRequest request, String param) throws ServletException, IOException {
 
 		String bar = param;
 		if (param != null && param.length() > 1) {
-		    StringBuilder sbxyz10510 = new StringBuilder(param);
-		    bar = sbxyz10510.replace(param.length()-"Z".length(), param.length(),"Z").toString();
+		    StringBuilder sbxyz52473 = new StringBuilder(param);
+		    bar = sbxyz52473.replace(param.length()-"Z".length(), param.length(),"Z").toString();
 		}
 	
 		return bar;	

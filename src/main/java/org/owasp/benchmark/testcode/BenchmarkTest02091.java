@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest02091")
+@WebServlet(value="/sqli-04/BenchmarkTest02091")
 public class BenchmarkTest02091 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
@@ -38,19 +38,22 @@ public class BenchmarkTest02091 extends HttpServlet {
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 
 		String param = "";
-		java.util.Enumeration<String> headers = request.getHeaders("vector");
-		if (headers.hasMoreElements()) {
+		java.util.Enumeration<String> headers = request.getHeaders("BenchmarkTest02091");
+		
+		if (headers != null && headers.hasMoreElements()) {
 			param = headers.nextElement(); // just grab first element
 		}
-
-		String bar = doSomething(param);
 		
+		// URL Decode the header value since req.getHeaders() doesn't. Unlike req.getParameters().
+		param = java.net.URLDecoder.decode(param, "UTF-8");
+
+		String bar = doSomething(request, param);
+		
+ 		String sql = "SELECT * from USERS where USERNAME='foo' and PASSWORD='" + bar + "'";
  		try {
-	        String sql = "SELECT * from USERS where USERNAME='foo' and PASSWORD='" + bar + "'";
-	
 			java.util.List<String> results = org.owasp.benchmark.helpers.DatabaseHelper.JDBCtemplate.query(sql,  new org.springframework.jdbc.core.RowMapper<String>() {
 	            public String mapRow(java.sql.ResultSet rs, int rowNum) throws java.sql.SQLException {
 	                try {
@@ -63,24 +66,33 @@ public class BenchmarkTest02091 extends HttpServlet {
 					}
 	            }
 	        });
-			java.io.PrintWriter out = response.getWriter();
-			
-			out.write("Your results are: ");
+			response.getWriter().println(
+				"Your results are: "
+			);
+
 	//		System.out.println("Your results are");
-			for(String s : results){
-				out.write(org.owasp.esapi.ESAPI.encoder().encodeForHTML(s) + "<br>");
+			for (String s : results) {
+				response.getWriter().println(
+					org.owasp.esapi.ESAPI.encoder().encodeForHTML(s) + "<br>"
+				);
 	//			System.out.println(s);
 			}
+		} catch (org.springframework.dao.EmptyResultDataAccessException e) {
+			response.getWriter().println(
+				"No results returned for query: " + org.owasp.esapi.ESAPI.encoder().encodeForHTML(sql) 
+			);
 		} catch (org.springframework.dao.DataAccessException e) {
 			if (org.owasp.benchmark.helpers.DatabaseHelper.hideSQLErrors) {
-        		response.getWriter().println("Error processing request.");
-        		return;
+        		response.getWriter().println(
+					"Error processing request."
+				);
         	}
 			else throw new ServletException(e);
 		}
 	}  // end doPost
 	
-	private static String doSomething(String param) throws ServletException, IOException {
+		
+	private static String doSomething(HttpServletRequest request, String param) throws ServletException, IOException {
 
 		String bar = param;
 	

@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest02518")
+@WebServlet(value="/cmdi-03/BenchmarkTest02518")
 public class BenchmarkTest02518 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
@@ -38,15 +38,15 @@ public class BenchmarkTest02518 extends HttpServlet {
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 
-		String[] values = request.getParameterValues("vector");
+		String[] values = request.getParameterValues("BenchmarkTest02518");
 		String param;
 		if (values != null && values.length > 0)
 		  param = values[0];
 		else param = "";
 
-		String bar = doSomething(param);
+		String bar = doSomething(request, param);
 		
 		String cmd = org.owasp.benchmark.helpers.Utils.getInsecureOSCommandString(this.getClass().getClassLoader());
 		String[] argsEnv = { bar };
@@ -56,11 +56,15 @@ public class BenchmarkTest02518 extends HttpServlet {
 			org.owasp.benchmark.helpers.Utils.printOSCommandResults(p, response);
 		} catch (IOException e) {
 			System.out.println("Problem executing cmdi - TestCase");
-            throw new ServletException(e);
+			response.getWriter().println(
+			  org.owasp.esapi.ESAPI.encoder().encodeForHTML(e.getMessage())
+			);
+			return;
 		}
 	}  // end doPost
 	
-	private static String doSomething(String param) throws ServletException, IOException {
+		
+	private static String doSomething(HttpServletRequest request, String param) throws ServletException, IOException {
 
 		String bar;
 		String guess = "ABC";

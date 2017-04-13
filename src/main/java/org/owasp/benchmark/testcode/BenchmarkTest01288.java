@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest01288")
+@WebServlet(value="/cmdi-01/BenchmarkTest01288")
 public class BenchmarkTest01288 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
@@ -38,12 +38,12 @@ public class BenchmarkTest01288 extends HttpServlet {
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 	
-		String param = request.getParameter("vector");
+		String param = request.getParameter("BenchmarkTest01288");
 		if (param == null) param = "";
 
-		String bar = new Test().doSomething(param);
+		String bar = new Test().doSomething(request, param);
 		
 		String cmd = org.owasp.benchmark.helpers.Utils.getInsecureOSCommandString(this.getClass().getClassLoader());
 		String[] args = {cmd};
@@ -56,20 +56,24 @@ public class BenchmarkTest01288 extends HttpServlet {
 			org.owasp.benchmark.helpers.Utils.printOSCommandResults(p, response);
 		} catch (IOException e) {
 			System.out.println("Problem executing cmdi - TestCase");
-            throw new ServletException(e);
+			response.getWriter().println(
+			  org.owasp.esapi.ESAPI.encoder().encodeForHTML(e.getMessage())
+			);
+			return;
 		}
 	}  // end doPost
 
+	
     private class Test {
 
-        public String doSomething(String param) throws ServletException, IOException {
+        public String doSomething(HttpServletRequest request, String param) throws ServletException, IOException {
 
 		String bar = "safe!";
-		java.util.HashMap<String,Object> map73283 = new java.util.HashMap<String,Object>();
-		map73283.put("keyA-73283", "a Value"); // put some stuff in the collection
-		map73283.put("keyB-73283", param); // put it in a collection
-		map73283.put("keyC", "another Value"); // put some stuff in the collection
-		bar = (String)map73283.get("keyB-73283"); // get it back out
+		java.util.HashMap<String,Object> map58555 = new java.util.HashMap<String,Object>();
+		map58555.put("keyA-58555", "a-Value"); // put some stuff in the collection
+		map58555.put("keyB-58555", param); // put it in a collection
+		map58555.put("keyC", "another-Value"); // put some stuff in the collection
+		bar = (String)map58555.get("keyB-58555"); // get it back out
 
             return bar;
         }

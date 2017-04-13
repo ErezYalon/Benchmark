@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest02435")
+@WebServlet(value="/weakrand-05/BenchmarkTest02435")
 public class BenchmarkTest02435 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
@@ -38,13 +38,13 @@ public class BenchmarkTest02435 extends HttpServlet {
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 
 		org.owasp.benchmark.helpers.SeparateClassRequest scr = new org.owasp.benchmark.helpers.SeparateClassRequest( request );
-		String param = scr.getTheParameter("vector");
+		String param = scr.getTheParameter("BenchmarkTest02435");
 		if (param == null) param = "";
 
-		String bar = doSomething(param);
+		String bar = doSomething(request, param);
 		
 	    try {
 		    java.util.Random numGen = java.security.SecureRandom.getInstance("SHA1PRNG");
@@ -77,30 +77,37 @@ public class BenchmarkTest02435 extends HttpServlet {
 
 			
 			if (foundUser) {
-				response.getWriter().println("Welcome back: " + user + "<br/>");			
+				response.getWriter().println(
+"Welcome back: " + user + "<br/>"
+);
 			} else {			
 				javax.servlet.http.Cookie rememberMe = new javax.servlet.http.Cookie(cookieName, rememberMeKey);
 				rememberMe.setSecure(true);
-				rememberMe.setPath("/benchmark/" + this.getClass().getSimpleName());
+	//			rememberMe.setPath("/benchmark/" + this.getClass().getSimpleName());
+				rememberMe.setPath(request.getRequestURI()); // i.e., set path to JUST this servlet 
+															 // e.g., /benchmark/sql-01/BenchmarkTest01001
 				request.getSession().setAttribute(cookieName, rememberMeKey);
 				response.addCookie(rememberMe);
-				response.getWriter().println(user + " has been remembered with cookie: " + rememberMe.getName() 
-						+ " whose value is: " + rememberMe.getValue() + "<br/>");
-			}
-				    
+response.getWriter().println(
+user + " has been remembered with cookie: " + rememberMe.getName() 
+						+ " whose value is: " + rememberMe.getValue() + "<br/>"
+);
+			}    
 	    } catch (java.security.NoSuchAlgorithmException e) {
 			System.out.println("Problem executing SecureRandom.nextBytes() - TestCase");
 			throw new ServletException(e);
 	    } finally {
-			response.getWriter().println("Randomness Test java.security.SecureRandom.nextBytes(byte[]) executed");	    
+			response.getWriter().println(
+"Randomness Test java.security.SecureRandom.nextBytes(byte[]) executed"
+);
 	    }
-	}
-	    	
-	void getNextNumber(java.util.Random generator, byte[] barray) {
-		generator.nextBytes(barray);
 	}  // end doPost
 	
-	private static String doSomething(String param) throws ServletException, IOException {
+	void getNextNumber(java.util.Random generator, byte[] barray) {
+		generator.nextBytes(barray);
+	}
+		
+	private static String doSomething(HttpServletRequest request, String param) throws ServletException, IOException {
 
 		org.owasp.benchmark.helpers.ThingInterface thing = org.owasp.benchmark.helpers.ThingFactory.createThing();
 		String bar = thing.doSomething(param);

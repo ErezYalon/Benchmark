@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,26 +26,30 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest00103")
+@WebServlet(value="/sqli-00/BenchmarkTest00103")
 public class BenchmarkTest00103 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
 	
 	@Override
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		doPost(request, response);
+		javax.servlet.http.Cookie userCookie = new javax.servlet.http.Cookie("BenchmarkTest00103", "bar");
+		userCookie.setMaxAge(60*3); //Store cookie for 3 minutes
+		response.addCookie(userCookie);
+		javax.servlet.RequestDispatcher rd = request.getRequestDispatcher("/sqli-00/BenchmarkTest00103.html");
+		rd.include(request, response);
 	}
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 	
 		javax.servlet.http.Cookie[] theCookies = request.getCookies();
 		
-		String param = "";
+		String param = "noCookieValueSupplied";
 		if (theCookies != null) {
 			for (javax.servlet.http.Cookie theCookie : theCookies) {
-				if (theCookie.getName().equals("vector")) {
+				if (theCookie.getName().equals("BenchmarkTest00103")) {
 					param = java.net.URLDecoder.decode(theCookie.getValue(), "UTF-8");
 					break;
 				}
@@ -62,21 +66,30 @@ public class BenchmarkTest00103 extends HttpServlet {
 		
 		
 		
+		String sql = "SELECT TOP 1 USERNAME from USERS where USERNAME='foo' and PASSWORD='" + bar + "'";
 		try {
-			String sql = "SELECT TOP 1 USERNAME from USERS where USERNAME='foo' and PASSWORD='"+ bar + "'";
-	
 	        Object results = org.owasp.benchmark.helpers.DatabaseHelper.JDBCtemplate.queryForObject(sql,new Object[]{}, String.class);
-			java.io.PrintWriter out = response.getWriter();
-			out.write("Your results are: ");
+			response.getWriter().println(
+				"Your results are: "
+			);
+
 	//		System.out.println("Your results are");
-			out.write(org.owasp.esapi.ESAPI.encoder().encodeForHTML(results.toString()));
+			response.getWriter().println(
+				org.owasp.esapi.ESAPI.encoder().encodeForHTML(results.toString())
+			);
 	//		System.out.println(results.toString());
+		} catch (org.springframework.dao.EmptyResultDataAccessException e) {
+			response.getWriter().println(
+				"No results returned for query: " + org.owasp.esapi.ESAPI.encoder().encodeForHTML(sql) 
+			);
 		} catch (org.springframework.dao.DataAccessException e) {
 			if (org.owasp.benchmark.helpers.DatabaseHelper.hideSQLErrors) {
-        		response.getWriter().println("Error processing request.");
-        		return;
+        		response.getWriter().println(
+					"Error processing request."
+				);
         	}
 			else throw new ServletException(e);
 		}
 	}
+	
 }

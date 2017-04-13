@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest01722")
+@WebServlet(value="/sqli-03/BenchmarkTest01722")
 public class BenchmarkTest01722 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
@@ -38,18 +38,18 @@ public class BenchmarkTest01722 extends HttpServlet {
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 	
 		String queryString = request.getQueryString();
-		String paramval = "vector"+"=";
+		String paramval = "BenchmarkTest01722"+"=";
 		int paramLoc = -1;
 		if (queryString != null) paramLoc = queryString.indexOf(paramval);
 		if (paramLoc == -1) {
-			response.getWriter().println("getQueryString() couldn't find expected parameter '" + "vector" + "' in query string.");
+			response.getWriter().println("getQueryString() couldn't find expected parameter '" + "BenchmarkTest01722" + "' in query string.");
 			return;
 		}
 		
-		String param = queryString.substring(paramLoc + paramval.length()); // 1st assume "vector" param is last parameter in query string.
+		String param = queryString.substring(paramLoc + paramval.length()); // 1st assume "BenchmarkTest01722" param is last parameter in query string.
 		// And then check to see if its in the middle of the query string and if so, trim off what comes after.
 		int ampersandLoc = queryString.indexOf("&", paramLoc);
 		if (ampersandLoc != -1) {
@@ -57,11 +57,10 @@ public class BenchmarkTest01722 extends HttpServlet {
 		}
 		param = java.net.URLDecoder.decode(param, "UTF-8");
 
-		String bar = new Test().doSomething(param);
+		String bar = new Test().doSomething(request, param);
 		
+ 		String sql = "SELECT * from USERS where USERNAME='foo' and PASSWORD='" + bar + "'";
  		try {
-	        String sql = "SELECT * from USERS where USERNAME='foo' and PASSWORD='" + bar + "'";
-	
 			java.util.List<String> results = org.owasp.benchmark.helpers.DatabaseHelper.JDBCtemplate.query(sql,  new org.springframework.jdbc.core.RowMapper<String>() {
 	            public String mapRow(java.sql.ResultSet rs, int rowNum) throws java.sql.SQLException {
 	                try {
@@ -74,34 +73,43 @@ public class BenchmarkTest01722 extends HttpServlet {
 					}
 	            }
 	        });
-			java.io.PrintWriter out = response.getWriter();
-			
-			out.write("Your results are: ");
+			response.getWriter().println(
+				"Your results are: "
+			);
+
 	//		System.out.println("Your results are");
-			for(String s : results){
-				out.write(org.owasp.esapi.ESAPI.encoder().encodeForHTML(s) + "<br>");
+			for (String s : results) {
+				response.getWriter().println(
+					org.owasp.esapi.ESAPI.encoder().encodeForHTML(s) + "<br>"
+				);
 	//			System.out.println(s);
 			}
+		} catch (org.springframework.dao.EmptyResultDataAccessException e) {
+			response.getWriter().println(
+				"No results returned for query: " + org.owasp.esapi.ESAPI.encoder().encodeForHTML(sql) 
+			);
 		} catch (org.springframework.dao.DataAccessException e) {
 			if (org.owasp.benchmark.helpers.DatabaseHelper.hideSQLErrors) {
-        		response.getWriter().println("Error processing request.");
-        		return;
+        		response.getWriter().println(
+					"Error processing request."
+				);
         	}
 			else throw new ServletException(e);
 		}
 	}  // end doPost
 
+	
     private class Test {
 
-        public String doSomething(String param) throws ServletException, IOException {
+        public String doSomething(HttpServletRequest request, String param) throws ServletException, IOException {
 
 		String bar = "safe!";
-		java.util.HashMap<String,Object> map95236 = new java.util.HashMap<String,Object>();
-		map95236.put("keyA-95236", "a_Value"); // put some stuff in the collection
-		map95236.put("keyB-95236", param); // put it in a collection
-		map95236.put("keyC", "another_Value"); // put some stuff in the collection
-		bar = (String)map95236.get("keyB-95236"); // get it back out
-		bar = (String)map95236.get("keyA-95236"); // get safe value back out
+		java.util.HashMap<String,Object> map33422 = new java.util.HashMap<String,Object>();
+		map33422.put("keyA-33422", "a_Value"); // put some stuff in the collection
+		map33422.put("keyB-33422", param); // put it in a collection
+		map33422.put("keyC", "another_Value"); // put some stuff in the collection
+		bar = (String)map33422.get("keyB-33422"); // get it back out
+		bar = (String)map33422.get("keyA-33422"); // get safe value back out
 
             return bar;
         }

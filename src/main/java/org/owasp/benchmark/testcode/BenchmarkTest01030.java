@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest01030")
+@WebServlet(value="/pathtraver-01/BenchmarkTest01030")
 public class BenchmarkTest01030 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
@@ -38,12 +38,17 @@ public class BenchmarkTest01030 extends HttpServlet {
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 	
-		String param = request.getHeader("vector");
-		if (param == null) param = "";
+		String param = "";
+		if (request.getHeader("BenchmarkTest01030") != null) {
+			param = request.getHeader("BenchmarkTest01030");
+		}
+		
+		// URL Decode the header value since req.getHeader() doesn't. Unlike req.getParameter().
+		param = java.net.URLDecoder.decode(param, "UTF-8");
 
-		String bar = new Test().doSomething(param);
+		String bar = new Test().doSomething(request, param);
 		
 		// FILE URIs are tricky because they are different between Mac and Windows because of lack of standardization.
 		// Mac requires an extra slash for some reason.
@@ -57,18 +62,25 @@ public class BenchmarkTest01030 extends HttpServlet {
 			java.net.URI fileURI = new java.net.URI("file", null, startURIslashes 
 				+ org.owasp.benchmark.helpers.Utils.testfileDir.replace('\\', java.io.File.separatorChar).replace(' ', '_') + bar, null, null);
 			java.io.File fileTarget = new java.io.File(fileURI);
-            response.getWriter().write("Access to file: '" + fileTarget + "' created." );
+            response.getWriter().println(
+"Access to file: '" + org.owasp.esapi.ESAPI.encoder().encodeForHTML(fileTarget.toString()) + "' created." 
+);
             if (fileTarget.exists()) {
-            response.getWriter().write(" And file already exists.");
-            } else { response.getWriter().write(" But file doesn't exist yet."); }
+            response.getWriter().println(
+" And file already exists."
+);
+            } else { response.getWriter().println(
+" But file doesn't exist yet."
+); }
 		} catch (java.net.URISyntaxException e) {
 			throw new ServletException(e);
 		}
 	}  // end doPost
 
+	
     private class Test {
 
-        public String doSomething(String param) throws ServletException, IOException {
+        public String doSomething(HttpServletRequest request, String param) throws ServletException, IOException {
 
 		String bar;
 		String guess = "ABC";

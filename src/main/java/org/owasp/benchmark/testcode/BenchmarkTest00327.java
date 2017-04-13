@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest00327")
+@WebServlet(value="/trustbound-00/BenchmarkTest00327")
 public class BenchmarkTest00327 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
@@ -38,13 +38,17 @@ public class BenchmarkTest00327 extends HttpServlet {
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 	
 		String param = "";
-		java.util.Enumeration<String> headers = request.getHeaders("vector");
-		if (headers.hasMoreElements()) {
+		java.util.Enumeration<String> headers = request.getHeaders("BenchmarkTest00327");
+		
+		if (headers != null && headers.hasMoreElements()) {
 			param = headers.nextElement(); // just grab first element
 		}
+		
+		// URL Decode the header value since req.getHeaders() doesn't. Unlike req.getParameters().
+		param = java.net.URLDecoder.decode(param, "UTF-8");
 		
 		
 		org.owasp.benchmark.helpers.ThingInterface thing = org.owasp.benchmark.helpers.ThingFactory.createThing();
@@ -54,7 +58,10 @@ public class BenchmarkTest00327 extends HttpServlet {
 		// javax.servlet.http.HttpSession.setAttribute(java.lang.String,java.lang.Object^)
 		request.getSession().setAttribute( "userid", bar);
 				
-		response.getWriter().println("Item: 'userid' with value: '" + org.owasp.benchmark.helpers.Utils.encodeForHTML(bar)
-			+ "' saved in session.");
+		response.getWriter().println(
+		"Item: 'userid' with value: '" + org.owasp.benchmark.helpers.Utils.encodeForHTML(bar)
+			+ "' saved in session."
+);
 	}
+	
 }

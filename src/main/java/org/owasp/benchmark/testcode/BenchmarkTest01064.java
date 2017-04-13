@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest01064")
+@WebServlet(value="/cmdi-01/BenchmarkTest01064")
 public class BenchmarkTest01064 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
@@ -38,12 +38,17 @@ public class BenchmarkTest01064 extends HttpServlet {
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 	
-		String param = request.getHeader("vector");
-		if (param == null) param = "";
+		String param = "";
+		if (request.getHeader("BenchmarkTest01064") != null) {
+			param = request.getHeader("BenchmarkTest01064");
+		}
+		
+		// URL Decode the header value since req.getHeader() doesn't. Unlike req.getParameter().
+		param = java.net.URLDecoder.decode(param, "UTF-8");
 
-		String bar = new Test().doSomething(param);
+		String bar = new Test().doSomething(request, param);
 		
 		String cmd = "";
         String osName = System.getProperty("os.name");
@@ -58,20 +63,24 @@ public class BenchmarkTest01064 extends HttpServlet {
 			org.owasp.benchmark.helpers.Utils.printOSCommandResults(p, response);
 		} catch (IOException e) {
 			System.out.println("Problem executing cmdi - TestCase");
-            throw new ServletException(e);
+			response.getWriter().println(
+			  org.owasp.esapi.ESAPI.encoder().encodeForHTML(e.getMessage())
+			);
+			return;
 		}
 	}  // end doPost
 
+	
     private class Test {
 
-        public String doSomething(String param) throws ServletException, IOException {
+        public String doSomething(HttpServletRequest request, String param) throws ServletException, IOException {
 
 		String bar = "safe!";
-		java.util.HashMap<String,Object> map6579 = new java.util.HashMap<String,Object>();
-		map6579.put("keyA-6579", "a Value"); // put some stuff in the collection
-		map6579.put("keyB-6579", param); // put it in a collection
-		map6579.put("keyC", "another Value"); // put some stuff in the collection
-		bar = (String)map6579.get("keyB-6579"); // get it back out
+		java.util.HashMap<String,Object> map72463 = new java.util.HashMap<String,Object>();
+		map72463.put("keyA-72463", "a-Value"); // put some stuff in the collection
+		map72463.put("keyB-72463", param); // put it in a collection
+		map72463.put("keyC", "another-Value"); // put some stuff in the collection
+		bar = (String)map72463.get("keyB-72463"); // get it back out
 
             return bar;
         }

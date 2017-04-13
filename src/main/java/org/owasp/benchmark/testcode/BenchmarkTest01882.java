@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,37 +26,40 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest01882")
+@WebServlet(value="/sqli-04/BenchmarkTest01882")
 public class BenchmarkTest01882 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
 	
 	@Override
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		doPost(request, response);
+		javax.servlet.http.Cookie userCookie = new javax.servlet.http.Cookie("BenchmarkTest01882", "bar");
+		userCookie.setMaxAge(60*3); //Store cookie for 3 minutes
+		response.addCookie(userCookie);
+		javax.servlet.RequestDispatcher rd = request.getRequestDispatcher("/sqli-04/BenchmarkTest01882.html");
+		rd.include(request, response);
 	}
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 
 		javax.servlet.http.Cookie[] theCookies = request.getCookies();
 		
-		String param = "";
+		String param = "noCookieValueSupplied";
 		if (theCookies != null) {
 			for (javax.servlet.http.Cookie theCookie : theCookies) {
-				if (theCookie.getName().equals("vector")) {
+				if (theCookie.getName().equals("BenchmarkTest01882")) {
 					param = java.net.URLDecoder.decode(theCookie.getValue(), "UTF-8");
 					break;
 				}
 			}
 		}
 
-		String bar = doSomething(param);
+		String bar = doSomething(request, param);
 		
+ 		String sql = "SELECT * from USERS where USERNAME='foo' and PASSWORD='" + bar + "'";
  		try {
-	        String sql = "SELECT * from USERS where USERNAME='foo' and PASSWORD='" + bar + "'";
-	
 			java.util.List<String> results = org.owasp.benchmark.helpers.DatabaseHelper.JDBCtemplate.query(sql,  new org.springframework.jdbc.core.RowMapper<String>() {
 	            public String mapRow(java.sql.ResultSet rs, int rowNum) throws java.sql.SQLException {
 	                try {
@@ -69,31 +72,40 @@ public class BenchmarkTest01882 extends HttpServlet {
 					}
 	            }
 	        });
-			java.io.PrintWriter out = response.getWriter();
-			
-			out.write("Your results are: ");
+			response.getWriter().println(
+				"Your results are: "
+			);
+
 	//		System.out.println("Your results are");
-			for(String s : results){
-				out.write(org.owasp.esapi.ESAPI.encoder().encodeForHTML(s) + "<br>");
+			for (String s : results) {
+				response.getWriter().println(
+					org.owasp.esapi.ESAPI.encoder().encodeForHTML(s) + "<br>"
+				);
 	//			System.out.println(s);
 			}
+		} catch (org.springframework.dao.EmptyResultDataAccessException e) {
+			response.getWriter().println(
+				"No results returned for query: " + org.owasp.esapi.ESAPI.encoder().encodeForHTML(sql) 
+			);
 		} catch (org.springframework.dao.DataAccessException e) {
 			if (org.owasp.benchmark.helpers.DatabaseHelper.hideSQLErrors) {
-        		response.getWriter().println("Error processing request.");
-        		return;
+        		response.getWriter().println(
+					"Error processing request."
+				);
         	}
 			else throw new ServletException(e);
 		}
 	}  // end doPost
 	
-	private static String doSomething(String param) throws ServletException, IOException {
+		
+	private static String doSomething(HttpServletRequest request, String param) throws ServletException, IOException {
 
 		String bar = "safe!";
-		java.util.HashMap<String,Object> map86691 = new java.util.HashMap<String,Object>();
-		map86691.put("keyA-86691", "a Value"); // put some stuff in the collection
-		map86691.put("keyB-86691", param); // put it in a collection
-		map86691.put("keyC", "another Value"); // put some stuff in the collection
-		bar = (String)map86691.get("keyB-86691"); // get it back out
+		java.util.HashMap<String,Object> map67948 = new java.util.HashMap<String,Object>();
+		map67948.put("keyA-67948", "a-Value"); // put some stuff in the collection
+		map67948.put("keyB-67948", param); // put it in a collection
+		map67948.put("keyC", "another-Value"); // put some stuff in the collection
+		bar = (String)map67948.get("keyB-67948"); // get it back out
 	
 		return bar;	
 	}

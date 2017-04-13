@@ -1,5 +1,5 @@
 /**
-* OWASP Benchmark Project v1.2beta
+* OWASP Benchmark Project v1.2
 *
 * This file is part of the Open Web Application Security Project (OWASP)
 * Benchmark Project. For details, please see
@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/BenchmarkTest00596")
+@WebServlet(value="/sqli-01/BenchmarkTest00596")
 public class BenchmarkTest00596 extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
@@ -38,7 +38,7 @@ public class BenchmarkTest00596 extends HttpServlet {
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
+		response.setContentType("text/html;charset=UTF-8");
 	
 		String param = "";
 		boolean flag = true;
@@ -49,7 +49,7 @@ public class BenchmarkTest00596 extends HttpServlet {
 			if (values != null) {
 				for(int i=0;i<values.length && flag; i++){
 					String value = values[i];
-					if (value.equals("vector")) {
+					if (value.equals("BenchmarkTest00596")) {
 						param = name;
 					    flag = false;
 					}
@@ -71,25 +71,34 @@ public class BenchmarkTest00596 extends HttpServlet {
 		}
 		
 		
+		String sql = "SELECT * from USERS where USERNAME='foo' and PASSWORD='" + bar + "'";
 		try {
-	        String sql = "SELECT * from USERS where USERNAME='foo' and PASSWORD='"
-	            + bar + "'";
-	
 			java.util.List list = org.owasp.benchmark.helpers.DatabaseHelper.JDBCtemplate.queryForList(sql);
-			java.io.PrintWriter out = response.getWriter();
-	        out.write("Your results are: <br>");
+			response.getWriter().println(
+				"Your results are: <br>"
+			);
+
 	//		System.out.println("Your results are");
 			
-			for(Object o:list){
-				out.write(org.owasp.esapi.ESAPI.encoder().encodeForHTML(o.toString()) + "<br>");
+			for (Object o:list) {
+				response.getWriter().println(
+					org.owasp.esapi.ESAPI.encoder().encodeForHTML(o.toString()) + "<br>"
+				);
 	//			System.out.println(o.toString());
 			}
+		} catch (org.springframework.dao.EmptyResultDataAccessException e) {
+			response.getWriter().println(
+				"No results returned for query: " + org.owasp.esapi.ESAPI.encoder().encodeForHTML(sql)
+			);
 		} catch (org.springframework.dao.DataAccessException e) {
 			if (org.owasp.benchmark.helpers.DatabaseHelper.hideSQLErrors) {
-        		response.getWriter().println("Error processing request.");
+        		response.getWriter().println(
+					"Error processing request."
+				);
         		return;
         	}
 			else throw new ServletException(e);
 		}
 	}
+	
 }
